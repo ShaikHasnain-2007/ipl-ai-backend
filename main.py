@@ -35,7 +35,8 @@ async def get_advice(state: AuctionState):
         response = model.generate_content(prompt)
         return {"advice": response.text.strip()}
     except Exception as e:
-        return {"advice": "Mentor is analyzing..."}
+        # This will now print the actual error to your screen instead of getting stuck
+        return {"advice": f"Backend Error: {str(e)}"}
 
 @app.get("/")
 def read_root():
