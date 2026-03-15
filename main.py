@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import google.generativeai as genai
 import os
+from groq import Groq
 
 app = FastAPI()
 
@@ -15,10 +15,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure the AI API Key (Render will inject this securely later)
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-model = genai.GenerativeModel('gemini-pro')
+# Initialize the blazing-fast Groq client
+# This automatically grabs the GROQ_API_KEY you saved in Render's Environment Variables
+client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
+# Define the data structure coming from your frontend
 class AuctionState(BaseModel):
     playerName: str
     playerRole: str
@@ -32,12 +33,22 @@ async def get_advice(state: AuctionState):
     prompt = f"You are an expert IPL auction mentor for franchise {state.myTeam}. The player {state.playerName} ({state.playerRole}) is up for auction with a base price of {state.basePrice} Cr. Your team has {state.myBudget} Cr left in the purse. Give a punchy, 1-sentence advice on whether to bid or pass, and up to what maximum price. Do not use markdown."
     
     try:
-        response = model.generate_content(prompt)
-        return {"advice": response.text.strip()}
+        # Call the blazing fast Llama 3 model via Groq
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            model="llama3-8b-8192", 
+        )
+        return {"advice": chat_completion.choices[0].message.content.strip()}
+    
     except Exception as e:
-        # This will now print the actual error to your screen instead of getting stuck
+        # If anything goes wrong, print the exact error to the chat UI instead of freezing
         return {"advice": f"Backend Error: {str(e)}"}
 
 @app.get("/")
 def read_root():
-    return {"status": "AI Mentor Server is running!"}
+    return {"status": "Groq AI Mentor Server is running! 🚀"}
