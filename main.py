@@ -17,7 +17,7 @@ app.add_middleware(
 
 # Configure the AI API Key (Render will inject this securely later)
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-pro')
 
 class AuctionState(BaseModel):
     playerName: str
